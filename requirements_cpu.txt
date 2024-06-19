@@ -1,0 +1,21 @@
+# external requirements
+matplotlib
+numpy
+scipy
+iniconfig
+pluggy
+py
+toml
+requests
+lxml
+flask
+markdown
+urllib3
+trio
+notebook
+jaxlib
+
+jax[cpu]
+
+# local package
+.
