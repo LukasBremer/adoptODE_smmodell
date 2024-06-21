@@ -10,6 +10,7 @@
 
 # Ignoriere spezifische Dateien
 .adoptodevenv
+.ad_ode_venv
 
 # Ignoriere Verzeichnisse
 data/
