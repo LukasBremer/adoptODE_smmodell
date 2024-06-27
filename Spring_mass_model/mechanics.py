@@ -6,11 +6,12 @@ import numpy as np
 import scipy
 import matplotlib.pyplot as plt
 import scipy.interpolate
+import interpax
 
 # grid points xj(0 to 3): Mass point x
 #      xj0 
 #
-# xj3  x  xj1
+# xj3  x   xj1
 #
 #      xj2
 #
@@ -118,6 +119,33 @@ def e_i_to_j(x_i, x_j):
     """"returns normal vector from x_i to x_j"""
     return (x_j-x_i)/jnp.linalg.norm(x_j-x_i)
 
+@jit
+def t_to_value_4p(x,t_eval,t,N_int):
+    # u = x-t
+    # t_close = jnp.nonzero(np.where(u == jnp.min(jnp.absolute(u)),x,0))
+    # #t_close = jnp.abs(u).min() + t
+    delta_t = (t_eval[-1]-t_eval[0])/(len(t_eval)*N_int)
+        
+    i = jnp.rint(t/delta_t).astype(int)
+    return x[:,i,:]
+
+@jit
+def t_to_value_1p(x,t_eval,t,N_int):
+    # u = x-t
+    # t_close = jnp.nonzero(np.where(u == jnp.min(jnp.absolute(u)),x,0))
+    # #t_close = jnp.abs(u).min() + t
+    delta_t = (t_eval[-1]-t_eval[0])/(len(t_eval)*N_int)
+        
+    i = jnp.rint(t/delta_t).astype(int)
+    return x[i]
+
+def interpolate_x(x,t_eval,m):
+    if x.shape[0] == 4:
+        x_int = np.zeros((4,len(t_eval)*m,2))
+        for i in range(4):
+            t_int, x_int[i] = interpolate_spline(x[i],t_eval,m)
+        
+    return t_int, x_int
 
 def interpolate_spline(arr, t_eval,m):
     # Assuming x and y are the input data points
@@ -130,10 +158,23 @@ def interpolate_spline(arr, t_eval,m):
 
     # Assuming x and y are the input data points
     y1_eval = arr[:,1]
-    interp_points = len(t_eval)*m
+    interp_points = len(t_eval)*m   
     cs1 = scipy.interpolate.CubicSpline(t_eval,y1_eval)
     # Generate interpolated values
     t_interp = np.linspace(t_eval[0], t_eval[-1], interp_points)  
     y1_interp = cs1(t_interp)
 
     return t_interp, jnp.array([y0_interp,y1_interp]).T # transpose to get the shape as input
+
+
+def interpolate_scalar(arr, t_eval,m):
+    # Assuming x and y are the input data points
+    y0_eval = arr
+    interp_points = len(t_eval)*m
+    cs0 = scipy.interpolate.CubicSpline(t_eval,y0_eval)
+    # Generate interpolated values
+    t_interp = np.linspace(t_eval[0], t_eval[-1], interp_points)  
+    y0_interp = cs0(t_interp)
+
+
+    return t_interp, y0_interp

@@ -10,8 +10,9 @@
 
 # Ignoriere spezifische Dateien
 .adoptodevenv
+.ad_ode_venv3
+.ad_ode_venv2
 .ad_ode_venv
-
 # Ignoriere Verzeichnisse
 data/
 figures/
