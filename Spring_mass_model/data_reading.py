@@ -3,6 +3,9 @@ import csv
 import configparser
 import matplotlib.pyplot as plt
 import progressbar
+import scipy
+from jax import jit
+import jax.numpy as jnp
 
 def read_config(variables, mode='chaos',file='config.ini'):
     config = configparser.ConfigParser()
@@ -74,11 +77,74 @@ def read_vector(file,shape_of_data):
     return data
 
 def shape_input_for_adoptode(x, x_cm, T_a, i, j):
+
+
     # extracts the i,j coordinate from x and the 4 nearest neighbors from x_cm
-    N,size,ls = read_config(["l_0","c_a"])
-    l_a0, c_a = ls
-    l_a_i = l_a0/(1+ c_a*T_a[:,i,j])
+    N,size,ls = read_config(["l_0","c_a",'pad'])
+    l_a0, c_a, pad = ls
+    T_a_arr = jnp.array([T_a[:,i-int(pad)-1,j-int(pad)-1],T_a[:,i-int(pad)-1,j-int(pad)],T_a[:,i-int(pad),j-int(pad)],T_a[:,i-int(pad),j-int(pad)-1]])
+    print(T_a_arr.shape)
+    l_a_i = l_a0/(1+ c_a*T_a_arr)
     x_i = x[:,:,i,j]
     x_j = np.array([x[:,:,i+1,j], x[:,:,i,j+1], x[:,:,i-1,j], x[:,:,i,j-1] ])
     x_cm_i = np.array([x_cm[:,:,i,j-1], x_cm[:,:,i,j], x_cm[:,:,i-1,j], x_cm[:,:,i-1,j-1] ])
     return x_i,x_j, x_cm_i,l_a_i
+
+@jit
+def t_to_value_4p(x,t_int,t):
+    
+    delta_t = (t_int[-1]-t_int[0])/(len(t_int))
+        
+    i = jnp.rint(t/delta_t).astype(int)
+    print(i)
+    return x[:,i,:]
+
+@jit
+def t_to_value_1p(x,t_int,t):
+    delta_t = (t_int[-1]-t_int[0])/(len(t_int))
+        
+    i = jnp.rint(t/delta_t).astype(int)
+    print(i)
+    return x[:,i]
+
+
+def interpolate_x(x,t_eval,m):
+    
+    x_int = np.zeros((4,len(t_eval)*m,2))
+    for i in range(4):
+        t_int, x_int[i] = interpolate_spline(x[i],t_eval,m)
+        
+    return t_int, x_int
+
+def interpolate_spline(arr, t_eval,m):
+    # Assuming x and y are the input data points
+    y0_eval = arr[:,0]
+    interp_points = len(t_eval)*m
+    cs0 = scipy.interpolate.CubicSpline(t_eval,y0_eval)
+    # Generate interpolated values
+    t_interp = np.linspace(t_eval[0], t_eval[-1], interp_points)  
+    y0_interp = cs0(t_interp)
+
+    # Assuming x and y are the input data points
+    y1_eval = arr[:,1]
+    interp_points = len(t_eval)*m   
+    cs1 = scipy.interpolate.CubicSpline(t_eval,y1_eval)
+    # Generate interpolated values
+    t_interp = np.linspace(t_eval[0], t_eval[-1], interp_points)  
+    y1_interp = cs1(t_interp)
+
+    return t_interp, jnp.array([y0_interp,y1_interp]).T # transpose to get the shape as input
+
+def interpolate_scalar(arr, t_eval,m):
+    # Assuming x and y are the input data points
+    
+    x_int = np.zeros((4,len(t_eval)*m))
+    interp_points = len(t_eval)*m
+    # Generate interpolated values
+    for i in range(4):    
+        cs0 = scipy.interpolate.CubicSpline(t_eval,arr[i,:])
+        t_interp = np.linspace(t_eval[0], t_eval[-1], interp_points)  
+        x_int[i,:] = cs0(t_interp)
+
+
+    return t_interp, x_int
