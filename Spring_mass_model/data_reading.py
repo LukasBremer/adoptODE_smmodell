@@ -82,7 +82,7 @@ def shape_input_for_adoptode(x, x_cm, T_a, i, j):
     # extracts the i,j coordinate from x and the 4 nearest neighbors from x_cm
     N,size,ls = read_config(["l_0","c_a",'pad'])
     l_a0, c_a, pad = ls
-    T_a_arr = jnp.array([T_a[:,i-int(pad)-1,j-int(pad)-1],T_a[:,i-int(pad)-1,j-int(pad)],T_a[:,i-int(pad),j-int(pad)],T_a[:,i-int(pad),j-int(pad)-1]])
+    T_a_arr = jnp.array([T_a[:,i-1,j-1],T_a[:,i-1,j],T_a[:,i,j],T_a[:,i,j-1]])
     print(T_a_arr.shape)
     l_a_i = l_a0/(1+ c_a*T_a_arr)
     x_i = x[:,:,i,j]
@@ -96,7 +96,7 @@ def t_to_value_4p(x,t_int,t):
     delta_t = (t_int[-1]-t_int[0])/(len(t_int))
         
     i = jnp.rint(t/delta_t).astype(int)
-    print(i)
+    
     return x[:,i,:]
 
 @jit
@@ -104,7 +104,7 @@ def t_to_value_1p(x,t_int,t):
     delta_t = (t_int[-1]-t_int[0])/(len(t_int))
         
     i = jnp.rint(t/delta_t).astype(int)
-    print(i)
+    
     return x[:,i]
 
 
