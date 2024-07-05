@@ -76,18 +76,19 @@ def read_vector(file,shape_of_data):
     bar.finish()
     return data
 
-def shape_input_for_adoptode(x, x_cm, T_a, i, j):
+def shape_input_for_adoptode(x, x_cm, T_a, i, j,l_a0):
 
 
-    # extracts the i,j coordinate from x and the 4 nearest neighbors from x_cm
-    N,size,ls = read_config(["l_0","c_a",'pad'])
-    l_a0, c_a, pad = ls
-    T_a_arr = jnp.array([T_a[:,i-1,j-1],T_a[:,i-1,j],T_a[:,i,j],T_a[:,i,j-1]])
-    print(T_a_arr.shape)
+    N,size,ls = read_config(["c_a"])
+    c_a = ls
+
+    T_a_arr = np.array([T_a[:,i-1,j-1],T_a[:,i-1,j],T_a[:,i,j],T_a[:,i,j-1]])
+    x_cm_i = np.array([x_cm[:,:,i-1,j-1], x_cm[:,:,i-1,j], x_cm[:,:,i,j], x_cm[:,:,i,j-1] ])
+
     l_a_i = l_a0/(1+ c_a*T_a_arr)
+
     x_i = x[:,:,i,j]
     x_j = np.array([x[:,:,i+1,j], x[:,:,i,j+1], x[:,:,i-1,j], x[:,:,i,j-1] ])
-    x_cm_i = np.array([x_cm[:,:,i,j-1], x_cm[:,:,i,j], x_cm[:,:,i-1,j], x_cm[:,:,i-1,j-1] ])
     return x_i,x_j, x_cm_i,l_a_i
 
 @jit

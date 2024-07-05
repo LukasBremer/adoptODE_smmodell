@@ -1,12 +1,11 @@
 import jax.numpy as jnp
 from jax import jit
 from jax.flatten_util import ravel_pytree
-
+from data_reading import *
 import numpy as np
 import scipy
 import matplotlib.pyplot as plt
 import scipy.interpolate
-import interpax
 
 # grid points xj(0 to 3): Mass point x
 #      xj0 
@@ -15,16 +14,18 @@ import interpax
 #
 #      xj2
 #
-# shape(x)  = (N,2,1)
-# shape(xj) = (N,2,4)
+# shape(x_i)  = (N,2,1)
+# shape(x_j) = (N,2,4)
+# shape(x_cm) = (N,2,4)
+# shape(l_a) = (N,4) different l_a for each x_cm.
 
 # active/passive axial points q 0 to 3; Mass point x; eta > 1/2
 #
 #              0
-#             q0a\    
-#        xcm0\    \xcm1
+#      \      q0a\    
+#       \xcm0\    \xcm1
 #         /   \q1a  /  
-#  3   q0/ /q1  x q2   /q3  1 
+#  3   q0/ /q1 xi q2   /q3  1 
 #         /   q2a\    /  
 #        xcm3\    \xcm2     
 #             \q3a
@@ -87,7 +88,7 @@ def axial_force_a(x, x_j, x_cm,l_a, params):
 
 @jit
 def interpolate_q_a(x_j, x, eta):
-    """interpolates the axial points q"""
+    """interpolates the intersection point of the axial springs q"""
     q = jnp.zeros((4,2))
     
     q = q.at[0,:].set(x + (x_j[0,:]-x) * eta)
@@ -99,7 +100,7 @@ def interpolate_q_a(x_j, x, eta):
 
 @jit
 def interpolate_q_p(x_j, x, eta):  
-    """interpolates the axial points q"""
+    """interpolates the intersection point of the axial springs q"""
     q = jnp.zeros((4,2))
 
     q = q.at[0,:].set(x + (x_j[3,:]-x) * eta)
@@ -121,3 +122,55 @@ def e_i_to_j(x_i, x_j):
     return (x_j-x_i)/jnp.linalg.norm(x_j-x_i)
 
 
+
+#
+#euler Method to test the mechnical implementation
+#
+
+def euler_step(xy,t,real_params,x_cm_interp,x_j_interp,l_a_interp,t_interp, dt):
+
+    dxy = sm_eom(xy,t,real_params,x_cm_interp,x_j_interp,l_a_interp,t_interp)
+    
+    x1 = xy['x1'] + dxy['x1'] * dt
+    x2 = xy['x2'] + dxy['x2'] * dt
+    y1 = xy['y1'] + dxy['y1'] * dt   
+    y2 = xy['y2'] + dxy['y2'] * dt
+
+    xy = {'x1':x1,'x2':x2,'y1':y1,'y2':y2,'f_x':dxy['f_x']}
+    t = t + dt
+
+    return xy, t
+
+@jit
+def sm_eom(xy, t, params,x_cm_interp,x_j_interp,l_a_interp,t_interp):
+    x = jnp.array([xy['x1'], xy['x2']])
+    # get interpolated parameters at corresponding time
+    x_cm_temp = t_to_value_4p(x_cm_interp,t_interp,t)
+    x_j_temp = t_to_value_4p(x_j_interp,t_interp,t)
+    l_a_temp = t_to_value_1p(l_a_interp,t_interp,t)
+
+    #initialize total force
+    f = total_force(x, x_j_temp, x_cm_temp, l_a_temp, t, params)
+    
+
+    #initialize eom
+    dx1 = xy['y1']
+    dx2 = xy['y2']
+    dy1 = 1/params['m'] * (f[0] - params['nu'] * xy['y1'])
+    dy2 = 1/params['m'] * (f[1] - params['nu'] * xy['y2'])
+
+    return {'x1':dx1, 'x2':dx2, 'y1':dy1, 'y2':dy2,'f_x':f[0]}
+
+def euler(xy0,iterations,real_params,x_cm_interp,x_j_interp,l_a_interp,t_interp,dt):
+#returns a list of all iterations of the system after iterating the euler method
+    xy = xy0
+    t = 0
+    xy_list = [xy['x1']]
+    t_list = [t]
+    f_x_list = [0]
+    for i in range(iterations):
+        xy, t = euler_step(xy,t,real_params,x_cm_interp,x_j_interp,l_a_interp,t_interp,dt)
+        t_list.append(t)
+        xy_list.append(xy['x1'])
+        f_x_list.append(xy['f_x'])
+    return xy_list,t_list,f_x_list
