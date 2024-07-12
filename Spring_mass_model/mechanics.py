@@ -37,6 +37,7 @@ import scipy.interpolate
 @jit
 def total_force(x, x_j, x_cm, l_a, t, params):
     """defines the total force of the system"""
+    f = jnp.zeros(2)
     f = grid_force(x, x_j, params) + axial_force_a(x, x_j, x_cm, l_a, params) + axial_force_p(x, x_j, x_cm, params)
     return f
 
@@ -83,7 +84,7 @@ def axial_force_a(x, x_j, x_cm,l_a, params):
     local_force += f_ij(q_j[1,:], x_cm[0,:], k_a, l_a[0])*(eta)
     local_force += f_ij(q_j[2,:], x_cm[2,:], k_a, l_a[2])*(eta)
     local_force += f_ij(q_j[3,:], x_cm[3,:], k_a, l_a[3])*(1-eta)
-    
+
     return local_force
 
 @jit

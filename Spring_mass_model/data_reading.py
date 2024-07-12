@@ -88,11 +88,11 @@ def shape_input_for_adoptode(x, x_cm, T_a, i, j,l_a0):
     l_a_i = l_a0/(1+ c_a*T_a_arr)
 
     x_i = x[:,:,i,j]
-    x_j = np.array([x[:,:,i+1,j], x[:,:,i,j+1], x[:,:,i-1,j], x[:,:,i,j-1] ])
+    x_j = np.array([x[:,:,i-1,j], x[:,:,i,j+1], x[:,:,i+1,j], x[:,:,i,j-1] ])
     return x_i,x_j, x_cm_i,l_a_i
 
 @jit
-def t_to_value_4p(x,t_int,t):
+def t_to_value_x(x,t_int,t):
     
     delta_t = (t_int[-1]-t_int[0])/(len(t_int))
         
@@ -101,13 +101,21 @@ def t_to_value_4p(x,t_int,t):
     return x[:,i,:]
 
 @jit
-def t_to_value_1p(x,t_int,t):
+def t_to_value_l(x,t_int,t):
     delta_t = (t_int[-1]-t_int[0])/(len(t_int))
         
-    i = jnp.rint(t/delta_t).astype(int)
+    i = jnp.rint(jnp.floor(t/delta_t)).astype(int)
     
     return x[:,i]
 
+
+@jit
+def t_to_value_1p(x,t_int,t):
+    delta_t = (t_int[-1]-t_int[0])/(len(t_int))
+        
+    i = jnp.rint(jnp.floor(t/delta_t)).astype(int)
+    
+    return x[i]
 
 def interpolate_x(x,t_eval,m):
     
