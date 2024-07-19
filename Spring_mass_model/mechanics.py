@@ -146,9 +146,9 @@ def euler_step(xy,t,real_params,x_cm_interp,x_j_interp,l_a_interp,t_interp, dt):
 def sm_eom(xy, t, params,x_cm_interp,x_j_interp,l_a_interp,t_interp):
     x = jnp.array([xy['x1'], xy['x2']])
     # get interpolated parameters at corresponding time
-    x_cm_temp = t_to_value_4p(x_cm_interp,t_interp,t)
-    x_j_temp = t_to_value_4p(x_j_interp,t_interp,t)
-    l_a_temp = t_to_value_1p(l_a_interp,t_interp,t)
+    x_cm_temp = t_to_value_x(x_cm_interp,t_interp,t)
+    x_j_temp = t_to_value_x(x_j_interp,t_interp,t)
+    l_a_temp = t_to_value_l(l_a_interp,t_interp,t)
 
     #initialize total force
     f = total_force(x, x_j_temp, x_cm_temp, l_a_temp, t, params)

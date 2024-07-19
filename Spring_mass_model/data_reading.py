@@ -157,3 +157,26 @@ def interpolate_scalar(arr, t_eval,m):
 
 
     return t_interp, x_int
+
+#
+#helper functions to create and read out dictionaries of the spline coefficients
+#
+
+# Function to generate a dictionary of all elements of fq_short.c
+def c_to_dict(c):
+    params = {}
+    keys = []
+    for i in range(c.shape[0]):
+        for j in range(c.shape[1]):
+            params['c'+str(i)+'_'+str(j)] = c[i, j]
+            keys.append('c'+str(i)+'_'+str(j))
+    return params, keys
+
+# Function to generate coefficients from dictionary
+@jit
+def dict_to_c(params, c_initial):
+    c = jnp.zeros(c_initial.shape)
+    for i in range(c_initial.shape[0]):
+        for j in range(c_initial.shape[1]):
+            c = c.at[i, j].set(params['c'+str(i)+'_'+str(j)])
+    return c
